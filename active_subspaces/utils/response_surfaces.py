@@ -1,7 +1,7 @@
 """Utilities for building response surface approximations."""
 import numpy as np
 from scipy.optimize import fminbound
-from scipy.misc import comb
+from scipy.special import comb
 from .misc import process_inputs, process_inputs_outputs
 
 class ResponseSurface():
