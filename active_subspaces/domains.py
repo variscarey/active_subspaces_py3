@@ -2,7 +2,7 @@
 import numpy as np
 from .utils.misc import process_inputs, BoundedNormalizer
 from scipy.spatial import ConvexHull
-from scipy.misc import comb
+from scipy.special import comb
 from .utils.qp_solver import QPSolver
 from .subspaces import Subspaces
 
