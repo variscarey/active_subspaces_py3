@@ -254,6 +254,8 @@ def process_inputs_outputs(X, f):
     """
     X, M, m = process_inputs(X)
 
+    if f.ndim == 1:
+        f.reshape(-1,1)
     if len(f.shape) == 2:
         Mf, mf = f.shape
     else:
