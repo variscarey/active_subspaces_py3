@@ -162,7 +162,29 @@ class PolynomialApproximation(ResponseSurface):
             df = None
 
         return f, df
+    
+    def comp_hessian(self, X):
+        '''
+        Returns hessian matrix at sample points X
+        
+        Parameters
+        ----------
+        X : input points (number of points, dimension) to return hessian
 
+        Returns
+        -------
+        D2F: 3-d array(point in X, dx_i, dx_j) (M,d,d)
+
+        '''
+        X, M, m = process_inputs(X)
+        d2B = hess_polynomial_bases(X, self.N)
+        d2f = np.zeros((M,m,m))
+        for i in range(m):
+            for j in range(m):
+                d2f[:,i,j] = np.dot(d2B[:,:,i,j], self.poly_weights).reshape((M))
+        d2f = d2f.reshape((M,m,m))
+        return d2f
+        
 class RadialBasisApproximation(ResponseSurface):
     """Approximate a multivariate function with a radial basis.
     
@@ -318,14 +340,16 @@ class RadialBasisApproximation(ResponseSurface):
             dK = grad_exponential_squared(self.X, X, 1.0, self.ell)
             dB = grad_polynomial_bases(X, self.N)
             df = np.zeros((M, m))
-            for i in range(m):
+
+            for i in range(m): 
                 df[:,i] = (np.dot(dK[:,:,i].T, self.radial_weights) + \
                     np.dot(dB[:,:,i], self.poly_weights)).reshape((M, ))
-            df = df.reshape((M, m))
+                df = df.reshape((M, m))
         else:
             df = None
 
         return f, df
+    
 
 def _rbf_objective(log10g, X, f, v, N, e):
     """Objective function for choosing the RBF shape parameters.
@@ -510,6 +534,48 @@ def grad_polynomial_bases(X, N):
                 ind[k] -= 1
                 B[:,i,k] = indk*np.prod(np.power(X, ind), axis=1)
     return B
+
+def hess_polynomial_bases(X, N):
+    '''
+    Computes the hessian of the monomial bases
+
+    Parameters
+    ----------
+    X : ndarray
+    
+    N : int 
+        the maximum degree of the monomial basis(in this case, 2!)
+    
+    Returns
+
+    B : ndarray indexed by sample point, monomial basis function, dx_i,dx_j
+    
+    '''
+    M, m = X.shape
+    I = index_set(N, m)
+    n = I.shape[0]
+    M, m = X.shape
+    I = index_set(N, m)
+    n = I.shape[0]
+    B = np.zeros((M, n, m, m)) 
+    for L in range(m):
+        for i in range(n):
+            ind = I[i,:].copy()
+            indL = ind[L]
+            if indL == 0:
+                #all partials ds/dL are zero
+                continue
+            else: 
+                ind[L] -= 1
+            for k in range(m):
+                indk = ind[k]
+                if indk == 0:
+                    continue
+                else:
+                    ind[k] -= 1
+                    B[:,i,L,k] = indL*indk*np.prod(np.power(X, ind), axis=1)
+    return B
+
 
 def _full_index_set(n, d):
     """
