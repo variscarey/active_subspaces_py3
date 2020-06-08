@@ -71,7 +71,7 @@ class PolynomialApproximation(ResponseSurface):
     poly_weights = None
     g, H = None, None
 
-    def train(self, X, f, weights=None):
+    def train(self, X, f, weights=None, regul = None):
         """Train the least-squares-fit polynomial approximation.
 
         Parameters
@@ -102,9 +102,22 @@ class PolynomialApproximation(ResponseSurface):
         if weights is not None:
             B, f = weights*B, weights*f
 
-        poly_weights = np.linalg.lstsq(B, f, rcond=None)[0]
+        if regul is None:
+            poly_weights = np.linalg.lstsq(B, f, rcond=None)[0]
+            
+        #solve ridge regression least-squares 
+        else:
+            alpha=regul*np.ones((B.shape[1],1),dtype=B.dtype)
+            #don't regularize the mean
+            alpha[0]=0
+            U,s,VT=np.linalg.svd(B,full_matrices=False)
+            rhs = U.T @ f
+            s = s.reshape(-1,1)
+            d = s/(s ** 2 + alpha)
+            rhs*=d
+            poly_weights = VT.T @ rhs
+            
         Rsqr = 1.0 - ( np.linalg.norm(np.dot(B, poly_weights) - f)**2 / (M*np.var(f)) )
-
         # store data
         self.X, self.f = X, f
         self.poly_weights = poly_weights.reshape((p,1))
@@ -330,7 +343,7 @@ class RadialBasisApproximation(ResponseSurface):
         """
         X, M, m = process_inputs(X)
 
-        #
+        
         K = exponential_squared(X, self.X, 1.0, self.ell)
         B = polynomial_bases(X, self.N)[0]
         f = np.dot(K, self.radial_weights) + np.dot(B, self.poly_weights)
