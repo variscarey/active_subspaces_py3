@@ -22,7 +22,7 @@ To run tests locally:
 
 # Requirements and Dependencies
 
-* [numpy](http://www.numpy.org/)
+* [numpy](http://www.numpy.org/), >= 1.18
 * [scipy](http://www.scipy.org/), >= 0.15.0
 * [matplotlib](http://matplotlib.org/)
 * [Gurobi](http://www.gurobi.com/) is an _optional_ dependency. The same functionality is accomplished with SciPy's [optimize](http://docs.scipy.org/doc/scipy/reference/optimize.html) package, albeit less accurately (particularly in the quadratic programs).
