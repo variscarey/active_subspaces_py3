@@ -37,7 +37,7 @@ class Subspaces():
     W1, W2 = None, None
     e_br, sub_br = None, None
 
-    def compute(self, X=None, f=None, df=None, weights=None, sstype='AS', ptype='EVG', nboot=0):
+    def compute(self, X=None, f=None, df=None, weights=None, sstype='AS', ptype='EVG', nboot=0, regul = None):
         """Compute the active and inactive subspaces.
         
         Given input points and corresponding outputs, or given samples of the 
@@ -246,7 +246,7 @@ def ols_subspace(X, f, weights):
     
     return sorted_eigh(C)
 
-def qphd_subspace(X, f, weights):
+def qphd_subspace(X, f, weights, regul = None):
     """Estimate active subspace with global quadratic model.
     
     This approach is similar to Ker-Chau Li's approach for principal Hessian
@@ -282,7 +282,7 @@ def qphd_subspace(X, f, weights):
     
     # compute a quadratic approximation
     pr = PolynomialApproximation(2)
-    pr.train(X, f, weights)
+    pr.train(X, f, weights, regul = regul)
 
     # get regression coefficients
     b, A = pr.g, pr.H
