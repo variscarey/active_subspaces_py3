@@ -114,12 +114,12 @@ class Subspaces():
         elif sstype == 'OLS':
             if X is None or f is None:
                 raise Exception('X or f is None')
-            e, W = ols_subspace(X, f, weights)
+            e, W = ols_subspace(X, f, weights, regul = regul)
             ssmethod = lambda X, f, df, weights: ols_subspace(X, f, weights)
         elif sstype == 'QPHD':
             if X is None or f is None:
                 raise Exception('X or f is None')
-            e, W = qphd_subspace(X, f, weights)
+            e, W = qphd_subspace(X, f, weights, regul = regul)
             ssmethod = lambda X, f, df, weights: qphd_subspace(X, f, weights)
         elif sstype == 'OPG':
             if X is None or f is None:
