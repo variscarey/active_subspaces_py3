@@ -103,10 +103,11 @@ class PolynomialApproximation(ResponseSurface):
             B, f = weights*B, weights*f
 
         if regul is None:
-            poly_weights = np.linalg.lstsq(B, f, rcond=None)[0]
+            poly_weights,res,rnk,s = np.linalg.lstsq(B, f, rcond=None)
             
         #solve ridge regression least-squares 
         else:
+            print('Regularization param',regul)
             alpha=regul*np.ones((B.shape[1],1),dtype=B.dtype)
             #don't regularize the mean
             alpha[0]=0
@@ -116,12 +117,14 @@ class PolynomialApproximation(ResponseSurface):
             d = s/(s ** 2 + alpha)
             rhs*=d
             poly_weights = VT.T @ rhs
+        self.cond = np.max(s)/np.min(s)
             
         Rsqr = 1.0 - ( np.linalg.norm(np.dot(B, poly_weights) - f)**2 / (M*np.var(f)) )
         # store data
         self.X, self.f = X, f
         self.poly_weights = poly_weights.reshape((p,1))
         self.Rsqr = Rsqr
+        
 
         # organize linear and quadratic coefficients
         self.g = poly_weights[1:m+1].copy().reshape((m,1))
