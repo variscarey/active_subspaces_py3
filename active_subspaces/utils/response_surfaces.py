@@ -110,7 +110,7 @@ class PolynomialApproximation(ResponseSurface):
         
         
         if regul is None:
-            poly_weights[1:],res,rnk,s = np.linalg.lstsq(B[:,1:], f, rcond=None)
+            poly_weights[1:],res,rnk,s = np.linalg.lstsq(B[:,1:], f.flatten(), rcond=None)
            
         #solve ridge regression least-squares 
         else:
