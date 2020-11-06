@@ -101,40 +101,34 @@ class PolynomialApproximation(ResponseSurface):
         p = B.shape[1]
         if weights is not None:
             B, f = weights*B, weights*f
-        # calculate data mean
-        fbar = np.mean(f)
-        f -= fbar
-        #print(np.sum(B[:,0]),B.shape)
-        poly_weights = np.zeros(B.shape[1])
-        poly_weights[0] = fbar
-        
-        
+     
         if regul is None:
-            poly_weights[1:],res,rnk,s = np.linalg.lstsq(B[:,1:], f.flatten(), rcond=None)
+            poly_weights,res,rnk,s = np.linalg.lstsq(B, f, rcond=None)
            
         #solve ridge regression least-squares 
         else:
-            test,res,rnk,s = np.linalg.lstsq(B[:,1:], f, rcond=None)
             #Computer SVD (omitting constant)
-            U,s,VT=np.linalg.svd(B[:,1:],full_matrices=False)
+            U,s,VT=np.linalg.svd(B,full_matrices=False)
             #compute weight vector with no regularization
             rhs = U.T @ f
             s = s.reshape(-1,1)
             rhs *= s
             no_reg_sol = (VT.T @ (rhs/s**2)).flatten()
-            #print(poly_weights)
+  
             #Solve Optimization Problem for optimal lambda
             #heurisitic from orthogonal design for now
-            alpha = regul * (B.shape[1] - 1) / np.dot(no_reg_sol,no_reg_sol)
             
-            poly_weights[1:] = (VT.T @ (rhs/(s**2+alpha))).flatten()
-            #print(poly_weights)
-            #print(poly_weights[1:]-no_reg_sol)
-            #print(test.shape,poly_weights.shape,no_reg_sol.shape)
-            #print(test.flatten()-no_reg_sol,res)
+            alpha = np.ones(B.shape[1])
+            alpha *= regul * (B.shape[1] - 1) / np.dot(no_reg_sol[1:],no_reg_sol[1:])
+            alpha[0] = 0
+            alpha = alpha.reshape(-1,1)
+            print(alpha.shape)
+            poly_weights= (VT.T @ (rhs/(s**2+alpha))).flatten()
+            #print(B.shape,poly_weights.shape,f.shape)
+      
         self.cond = np.max(s)/np.min(s)
             
-        Rsqr = 1.0 - ( np.linalg.norm(np.dot(B[:,1:], poly_weights[1:]) - f.flatten())**2 / (M*np.var(f)) )
+        Rsqr = 1.0 - ( np.linalg.norm(np.dot(B, poly_weights.flatten()) - f.flatten())**2 / (M*np.var(f)) )
         # store data
         self.X, self.f = X, f
         self.poly_weights = poly_weights.reshape((p,1))
