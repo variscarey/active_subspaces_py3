@@ -76,8 +76,8 @@ class BoundedNormalizer(Normalizer):
             inputs
         """
         m = lb.size
-        self.lb = lb.reshape((1, m))
-        self.ub = ub.reshape((1, m))
+        self.lb = lb.flatten()
+        self.ub = ub.flatten()
 
     def normalize(self, X):
         """Return corresponding points shifted and scaled to [-1,1]^m.

@@ -71,7 +71,7 @@ class PolynomialApproximation(ResponseSurface):
     poly_weights = None
     g, H = None, None
 
-    def train(self, X, f, weights=None, regul = None):
+    def train(self, X, f, weights=None, regul = None, lasso = False):
         """Train the least-squares-fit polynomial approximation.
 
         Parameters
@@ -91,6 +91,9 @@ class PolynomialApproximation(ResponseSurface):
         This method sets all the attributes of the class for use in the 
         `predict` method.
         """
+        
+        from sklearn.linear_model import Lasso
+        
         X, f, M, m = process_inputs_outputs(X, f)
 
         # check that there are enough points to train the polynomial
@@ -104,36 +107,46 @@ class PolynomialApproximation(ResponseSurface):
      
         if regul is None:
             poly_weights,res,rnk,s = np.linalg.lstsq(B, f, rcond=None)
-           
+            #print(poly_weights.shape)
         #solve ridge regression least-squares 
         else:
-            #Computer SVD (omitting constant)
-            U,s,VT=np.linalg.svd(B,full_matrices=False)
-            #compute weight vector with no regularization
-            rhs = U.T @ f
-            s = s.reshape(-1,1)
-            rhs *= s
-            no_reg_sol = (VT.T @ (rhs/s**2)).flatten()
+            if lasso is False:
+                #Computer SVD (omitting constant)
+                U,s,VT=np.linalg.svd(B,full_matrices=False)
+                #compute weight vector with no regularization
+                rhs = U.T @ f
+                s = s.reshape(-1,1)
+                rhs *= s
+                no_reg_sol = (VT.T @ (rhs/s**2)).flatten()
   
-            #Solve Optimization Problem for optimal lambda
-            #heurisitic from orthogonal design for now
+                #Solve Optimization Problem for optimal lambda
+                #heurisitic from orthogonal design for now
             
-            alpha = np.ones(B.shape[1])
-            alpha *= regul * (B.shape[1] - 1) / np.dot(no_reg_sol[1:],no_reg_sol[1:])
-            alpha[0] = 0
-            alpha = alpha.reshape(-1,1)
-            print(alpha.shape)
-            poly_weights= (VT.T @ (rhs/(s**2+alpha))).flatten()
-            #print(B.shape,poly_weights.shape,f.shape)
+                alpha = np.ones(B.shape[1])
+                alpha *= regul * (B.shape[1] - 1) / np.dot(no_reg_sol[1:],no_reg_sol[1:])
+                alpha[0] = 0
+                alpha = alpha.reshape(-1,1)
+                poly_weights= (VT.T @ (rhs/(s**2+alpha))).flatten()
+                #print(B.shape,poly_weights.shape,f.shape)
       
-        self.cond = np.max(s)/np.min(s)
-            
+                self.cond = np.max(s)/np.min(s)
+            else: #lasso
+                poly_weights = np.zeros(p)
+                #print(B.shape,f.shape)
+                lam = np.sqrt(regul*2*np.log(B.shape[1]))/np.sqrt(B.shape[0])
+                clf = Lasso(alpha=lam,max_iter = 10000)
+                clf.fit(B[:,1:],f.flatten())
+                poly_weights[0] = clf.intercept_
+                poly_weights[1:] = clf.coef_
         Rsqr = 1.0 - ( np.linalg.norm(np.dot(B, poly_weights.flatten()) - f.flatten())**2 / (M*np.var(f)) )
         # store data
         self.X, self.f = X, f
         self.poly_weights = poly_weights.reshape((p,1))
         self.Rsqr = Rsqr
-        print('Rsqr',Rsqr)
+        if regul is True and lasso is True:
+            print('Rsqr for Lasso ',self.Rsqr)
+            print('lambda for lasso ',lam)
+        
         
 
         # organize linear and quadratic coefficients
